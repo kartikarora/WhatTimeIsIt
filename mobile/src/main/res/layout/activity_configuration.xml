@@ -1,0 +1,115 @@
+<?xml version="1.0" encoding="utf-8"?>
+<android.support.design.widget.CoordinatorLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/activity_configuration"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@android:color/background_light"
+    tools:context="me.kartikarora.whattimeisit.ConfigurationActivity">
+
+    <RelativeLayout
+        android:layout_width="match_parent"
+        android:layout_height="match_parent">
+
+        <android.support.v7.widget.Toolbar
+            android:id="@+id/toolbar"
+            android:layout_width="match_parent"
+            android:layout_height="?attr/actionBarSize"
+            android:layout_alignParentTop="true"
+            android:elevation="4dp"
+            android:popupTheme="@style/AppTheme.Toolbar"
+            android:theme="@style/AppTheme.Toolbar" />
+
+        <android.support.v7.widget.SwitchCompat
+            android:id="@+id/time_format_switch"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_below="@id/toolbar"
+            android:paddingBottom="@dimen/activity_vertical_margin"
+            android:paddingLeft="@dimen/activity_horizontal_margin"
+            android:paddingRight="@dimen/activity_horizontal_margin"
+            android:paddingTop="@dimen/activity_vertical_margin"
+            android:text="@string/time_format" />
+
+        <View
+            android:id="@+id/hr1"
+            android:layout_width="match_parent"
+            android:layout_height="1dp"
+            android:layout_below="@id/time_format_switch"
+            android:background="@android:color/darker_gray" />
+
+        <android.support.v7.widget.SwitchCompat
+            android:id="@+id/am_pm_switch"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_below="@id/hr1"
+            android:paddingBottom="@dimen/activity_vertical_margin"
+            android:paddingLeft="@dimen/activity_horizontal_margin"
+            android:paddingRight="@dimen/activity_horizontal_margin"
+            android:paddingTop="@dimen/activity_vertical_margin"
+            android:text="@string/show_am_pm" />
+
+        <View
+            android:id="@+id/hr2"
+            android:layout_width="match_parent"
+            android:layout_height="1dp"
+            android:layout_below="@id/am_pm_switch"
+            android:background="@android:color/darker_gray" />
+
+        <android.support.v7.widget.SwitchCompat
+            android:id="@+id/day_date_switch"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_below="@id/hr2"
+            android:paddingBottom="@dimen/activity_vertical_margin"
+            android:paddingLeft="@dimen/activity_horizontal_margin"
+            android:paddingRight="@dimen/activity_horizontal_margin"
+            android:paddingTop="@dimen/activity_vertical_margin"
+            android:text="@string/show_day_and_date" />
+
+        <View
+            android:id="@+id/hr3"
+            android:layout_width="match_parent"
+            android:layout_height="1dp"
+            android:layout_below="@id/day_date_switch"
+            android:background="@android:color/darker_gray" />
+
+
+        <android.support.v7.widget.SwitchCompat
+            android:id="@+id/second_switch"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_below="@id/hr3"
+            android:paddingBottom="@dimen/activity_vertical_margin"
+            android:paddingLeft="@dimen/activity_horizontal_margin"
+            android:paddingRight="@dimen/activity_horizontal_margin"
+            android:paddingTop="@dimen/activity_vertical_margin"
+            android:text="@string/show_seconds" />
+
+        <View
+            android:id="@+id/hr4"
+            android:layout_width="match_parent"
+            android:layout_height="1dp"
+            android:layout_below="@id/second_switch"
+            android:background="@android:color/darker_gray" />
+
+
+        <android.support.v7.widget.SwitchCompat
+            android:id="@+id/hex_switch"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_below="@id/hr4"
+            android:paddingBottom="@dimen/activity_vertical_margin"
+            android:paddingLeft="@dimen/activity_horizontal_margin"
+            android:paddingRight="@dimen/activity_horizontal_margin"
+            android:paddingTop="@dimen/activity_vertical_margin"
+            android:text="@string/show_hex_color_code" />
+
+        <View
+            android:id="@+id/hr5"
+            android:layout_width="match_parent"
+            android:layout_height="1dp"
+            android:layout_below="@id/hex_switch"
+            android:background="@android:color/darker_gray" />
+    </RelativeLayout>
+</android.support.design.widget.CoordinatorLayout>

@@ -1,0 +1,9 @@
+<resources>
+    <string name="app_name">What Time Is it?</string>
+    <string name="time_format">12 hour time format</string>
+    <string name="watchface_configuration">Watchface Configuration</string>
+    <string name="show_am_pm">Show AM/PM</string>
+    <string name="show_day_and_date">Show day and date</string>
+    <string name="show_seconds">Show seconds</string>
+    <string name="show_hex_color_code">Show hex color code</string>
+</resources>
