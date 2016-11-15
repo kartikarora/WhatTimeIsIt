@@ -1,12 +1,12 @@
-/*
- * Copyright (C) 2014 The Android Open Source Project
- *
+/**
+ * Copyright 2016 Kartik Arora
+ * <p/>
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
- *
- *      http://www.apache.org/licenses/LICENSE-2.0
- *
+ * <p/>
+ * http://www.apache.org/licenses/LICENSE-2.0
+ * <p/>
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -20,6 +20,7 @@ import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
+import android.content.SharedPreferences;
 import android.content.res.Resources;
 import android.graphics.Canvas;
 import android.graphics.Color;
@@ -29,10 +30,19 @@ import android.graphics.Typeface;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Message;
+import android.support.annotation.NonNull;
+import android.support.annotation.Nullable;
 import android.support.wearable.watchface.CanvasWatchFaceService;
 import android.support.wearable.watchface.WatchFaceStyle;
+import android.util.Log;
 import android.view.SurfaceHolder;
 import android.view.WindowInsets;
+
+import com.google.android.gms.common.ConnectionResult;
+import com.google.android.gms.common.api.GoogleApiClient;
+import com.google.android.gms.wearable.MessageApi;
+import com.google.android.gms.wearable.MessageEvent;
+import com.google.android.gms.wearable.Wearable;
 
 import java.lang.ref.WeakReference;
 import java.text.SimpleDateFormat;
@@ -50,6 +60,12 @@ public class WhatTimeIsItWatchFaceService extends CanvasWatchFaceService {
             Typeface.create(Typeface.SANS_SERIF, Typeface.NORMAL);
     private static final Typeface MONO_TYPEFACE =
             Typeface.create(Typeface.MONOSPACE, Typeface.NORMAL);
+
+    public static String PREF_TIME_FORMAT = "timeformat";
+    public static String PREF_AM_PM = "ampm";
+    public static String PREF_DAY_DATE = "daydate";
+    public static String PREF_HEX = "hex";
+    public static String PREF_SECONDS = "seconds";
 
     /**
      * Update rate in milliseconds for interactive mode. We update once a second since seconds are
@@ -87,7 +103,10 @@ public class WhatTimeIsItWatchFaceService extends CanvasWatchFaceService {
         }
     }
 
-    private class Engine extends CanvasWatchFaceService.Engine {
+    private class Engine extends CanvasWatchFaceService.Engine implements GoogleApiClient.ConnectionCallbacks,
+            GoogleApiClient.OnConnectionFailedListener {
+
+
         final Handler mUpdateTimeHandler = new EngineHandler(this);
         boolean mRegisteredTimeZoneReceiver = false;
         Paint mBackgroundPaint, mTimePaint, mHexPaint, mDatePaint;
@@ -101,6 +120,8 @@ public class WhatTimeIsItWatchFaceService extends CanvasWatchFaceService {
             }
         };
 
+        private GoogleApiClient mGoogleApiClient;
+
         /**
          * Whether the display supports fewer bits for each color in ambient mode. When true, we
          * disable anti-aliasing in ambient mode.
@@ -110,6 +131,12 @@ public class WhatTimeIsItWatchFaceService extends CanvasWatchFaceService {
         @Override
         public void onCreate(SurfaceHolder holder) {
             super.onCreate(holder);
+
+            mGoogleApiClient = new GoogleApiClient.Builder(WhatTimeIsItWatchFaceService.this)
+                    .addApi(Wearable.API)
+                    .addConnectionCallbacks(this)
+                    .addOnConnectionFailedListener(this)
+                    .build();
 
             setWatchFaceStyle(new WatchFaceStyle.Builder(WhatTimeIsItWatchFaceService.this)
                     .setCardPeekMode(WatchFaceStyle.PEEK_MODE_VARIABLE)
@@ -145,17 +172,41 @@ public class WhatTimeIsItWatchFaceService extends CanvasWatchFaceService {
 
             if (visible) {
                 registerReceiver();
-
+                mGoogleApiClient.connect();
+                invalidateIfNecessary();
                 // Update time zone in case it changed while we weren't visible.
                 mCalendar.setTimeZone(TimeZone.getDefault());
-                invalidate();
             } else {
                 unregisterReceiver();
+                releaseGoogleApiClient();
             }
 
             // Whether the timer should be running depends on whether we're visible (as well as
             // whether we're in ambient mode), so we may need to start or stop the timer.
             updateTimer();
+        }
+
+        private void releaseGoogleApiClient() {
+            if (mGoogleApiClient != null && mGoogleApiClient.isConnected()) {
+                Wearable.MessageApi.removeListener(mGoogleApiClient, onMessageReceivedListener);
+                mGoogleApiClient.disconnect();
+            }
+        }
+
+        private final MessageApi.MessageListener onMessageReceivedListener = new MessageApi.MessageListener() {
+            @Override
+            public void onMessageReceived(MessageEvent messageEvent) {
+                String path = messageEvent.getPath().split("/")[1];
+                boolean data = Boolean.parseBoolean(new String(messageEvent.getData()));
+                likhDoPreference(path, data);
+                invalidateIfNecessary();
+            }
+        };
+
+        private void invalidateIfNecessary() {
+            if (isVisible() && !isInAmbientMode()) {
+                invalidate();
+            }
         }
 
         private void registerReceiver() {
@@ -227,10 +278,20 @@ public class WhatTimeIsItWatchFaceService extends CanvasWatchFaceService {
             Rect timeRect = new Rect();
             Rect hexRect = new Rect();
             Rect dateRect = new Rect();
-            String timeFormat = "hh : mm : ss a";
-            String hexText = getHex();
-            String dateText = new SimpleDateFormat("EEE, dd-MM-yy", Locale.ENGLISH).format(mCalendar.getTime());
-            String timeText = new SimpleDateFormat(timeFormat, Locale.ENGLISH).format(mCalendar.getTime());
+
+            final String dateText = new SimpleDateFormat("EEE, dd-MM-yy", Locale.ENGLISH).format(mCalendar.getTime());
+
+            String format12 = "hh : mm";
+            String format24 = "HH : mm";
+
+            String format = (deDoPreference(PREF_TIME_FORMAT) ? format12 : format24)
+                    + (deDoPreference(PREF_SECONDS) ? " : ss" : "");
+
+            format += deDoPreference(PREF_AM_PM) && deDoPreference(PREF_TIME_FORMAT) ? " a" : "";
+
+            final String timeText = new SimpleDateFormat(format, Locale.ENGLISH)
+                    .format(mCalendar.getTime());
+            final String hexText = getHex();
             if (isInAmbientMode()) {
                 canvas.drawColor(Color.BLACK);
             } else {
@@ -240,10 +301,16 @@ public class WhatTimeIsItWatchFaceService extends CanvasWatchFaceService {
 
             mTimePaint.getTextBounds(timeText, 0, timeText.length(), timeRect);
             canvas.drawText(timeText, bounds.centerX() - timeRect.centerX(), bounds.centerY() - timeRect.centerY(), mTimePaint);
-            mHexPaint.getTextBounds(hexText, 0, hexText.length(), hexRect);
-            canvas.drawText(hexText, bounds.centerX() - hexRect.centerX(), bounds.height() - hexRect.height() - 25.0f, mHexPaint);
-            mDatePaint.getTextBounds(dateText, 0, dateText.length(), dateRect);
-            canvas.drawText(dateText, bounds.centerX() - dateRect.centerX(), bounds.height() - dateRect.height() - 50.0f, mDatePaint);
+
+            if (deDoPreference(PREF_HEX)) {
+                mHexPaint.getTextBounds(hexText, 0, hexText.length(), hexRect);
+                canvas.drawText(hexText, bounds.centerX() - hexRect.centerX(), bounds.height() - hexRect.height() - 25.0f, mHexPaint);
+            }
+
+            if (deDoPreference(PREF_DAY_DATE)) {
+                mDatePaint.getTextBounds(dateText, 0, dateText.length(), dateRect);
+                canvas.drawText(dateText, bounds.centerX() - dateRect.centerX(), bounds.height() - dateRect.height() - 50.0f, mDatePaint);
+            }
         }
 
         private String getHex() {
@@ -284,10 +351,33 @@ public class WhatTimeIsItWatchFaceService extends CanvasWatchFaceService {
                 mUpdateTimeHandler.sendEmptyMessageDelayed(MSG_UPDATE_TIME, delayMs);
             }
         }
+
+        @Override
+        public void onConnected(@Nullable Bundle bundle) {
+            Wearable.MessageApi.addListener(mGoogleApiClient, onMessageReceivedListener);
+            Log.d("Google API", "Connected");
+        }
+
+        @Override
+        public void onConnectionSuspended(int i) {
+            Log.e("Google API", "Not Connected");
+        }
+
+        @Override
+        public void onConnectionFailed(@NonNull ConnectionResult connectionResult) {
+            Log.e("error", connectionResult.getErrorMessage());
+        }
     }
 
     private boolean deDoPreference(String prefName) {
         String PREF_FILE = getString(R.string.app_name);
         return getSharedPreferences(PREF_FILE, MODE_PRIVATE).getBoolean(prefName, true);
+    }
+
+    private void likhDoPreference(String prefName, boolean value) {
+        String PREF_FILE = getString(R.string.app_name);
+        SharedPreferences.Editor editor = getSharedPreferences(PREF_FILE, MODE_PRIVATE).edit();
+        editor.putBoolean(prefName, value);
+        editor.apply();
     }
 }
