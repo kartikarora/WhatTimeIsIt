@@ -146,9 +146,9 @@ public class WhatTimeIsItWatchFaceService extends CanvasWatchFaceService {
 
             mBackgroundPaint = new Paint();
 
-            mTimePaint = createTextPaint(Color.parseColor("#ecf0f1"), NORMAL_TYPEFACE);
-            mHexPaint = createTextPaint(Color.parseColor("#bdc3c7"), MONO_TYPEFACE);
-            mDatePaint = createTextPaint(Color.parseColor("#bdc3c7"), NORMAL_TYPEFACE);
+            mTimePaint = createTextPaint(Color.parseColor("#ecf0f1"), "fonts/roboto_light.TTF");
+            mHexPaint = createTextPaint(Color.parseColor("#bdc3c7"), "fonts/droid_mono.TTF");
+            mDatePaint = createTextPaint(Color.parseColor("#bdc3c7"), "fonts/roboto_thin.TTF");
             mCalendar = Calendar.getInstance();
         }
 
@@ -162,6 +162,14 @@ public class WhatTimeIsItWatchFaceService extends CanvasWatchFaceService {
             Paint paint = new Paint();
             paint.setColor(textColor);
             paint.setTypeface(typeface);
+            paint.setAntiAlias(true);
+            return paint;
+        }
+
+        private Paint createTextPaint(int textColor, String fontPath) {
+            Paint paint = new Paint();
+            paint.setColor(textColor);
+            paint.setTypeface(Typeface.createFromAsset(getAssets(), fontPath));
             paint.setAntiAlias(true);
             return paint;
         }

@@ -4,7 +4,7 @@ A simple minimal color changing watchface!
 
 ## TODO
 
-- Change the fonts, they don't look good on the watch!
+- ~~Change the fonts, they don't look good on the watch!~~
 - Someone make a nice 512x512 Launcher Icon please!
 - Release on Play Store :P
 - Make a analogue face!
